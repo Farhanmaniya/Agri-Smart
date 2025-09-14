@@ -1,0 +1,98 @@
+{
+  "info": {
+    "name": "AgriSmart API Tests",
+    "description": "Test collection for AgriSmart pre-trained models",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/api/health",
+          "host": ["{{base_url}}"],
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "Rainfall Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"temperature\": 25.0,\n  \"humidity\": 60.0,\n  \"pressure\": 1013.0,\n  \"wind_speed\": 10.0,\n  \"month\": 6,\n  \"day_of_year\": 150\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/predictions/rainfall",
+          "host": ["{{base_url}}"],
+          "path": ["api", "predictions", "rainfall"]
+        }
+      }
+    },
+    {
+      "name": "Soil Type Prediction",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"ph\": 6.5,\n  \"nitrogen\": 40.0,\n  \"phosphorus\": 30.0,\n  \"potassium\": 35.0,\n  \"organic_matter\": 2.5,\n  \"moisture\": 25.0,\n  \"temperature\": 25.0\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/predictions/soil-type",
+          "host": ["{{base_url}}"],
+          "path": ["api", "predictions", "soil-type"]
+        }
+      }
+    },
+    {
+      "name": "List Models",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/predictions/models",
+          "host": ["{{base_url}}"],
+          "path": ["api", "predictions", "models"]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000"
+    },
+    {
+      "key": "token",
+      "value": "YOUR_TOKEN_HERE"
+    }
+  ]
+}
