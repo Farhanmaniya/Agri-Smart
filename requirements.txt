@@ -1,41 +1,41 @@
 # AgriSmart Backend Dependencies
 # Core FastAPI dependencies
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-python-jose[cryptography]==3.3.0
-passlib[bcrypt]==1.7.4
-python-dotenv==1.0.0
-
+fastapi
+uvicorn
+supabase
+pydantic
+bcrypt
+passlib
+scikit-learn
+numpy
+Cython
+pandas
+python-dotenv
 # Database dependencies
-sqlalchemy==2.0.23
-alembic==1.12.1
-asyncpg==0.29.0
+sqlalchemy
+alembic
+asyncpg
 
 # Machine Learning dependencies
-scikit-learn==1.3.2
-numpy==1.24.3
-pandas==2.1.3
-joblib==1.3.2
+joblib
 
 # TensorFlow for .h5 model support (optional)
-tensorflow==2.15.0
+tensorflow==2.20.0
 
 # Additional ML libraries
-scipy==1.11.4
+scipy
 
 # HTTP client
-httpx==0.25.2
+httpx
 
 # Validation
-pydantic==2.5.0
-email-validator==2.1.0
+email-validator
 
 # Logging and monitoring
-structlog==23.2.0
+structlog
 
 # Development dependencies (optional)
-pytest==7.4.3
-pytest-asyncio==0.21.1
-black==23.11.0
-flake8==6.1.0
+pytest
+pytest-asyncio
+black
+flake8
