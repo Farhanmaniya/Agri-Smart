@@ -36,6 +36,17 @@ class CropType(str, Enum):
     LENTIL = "lentil"
     GROUNDNUT = "groundnut"
 
+# Weather Models
+class WeatherResponse(BaseModel):
+    """Weather data response model."""
+    temperature: float = Field(..., description="Temperature in Celsius")
+    humidity: float = Field(..., description="Humidity percentage")
+    precipitation: float = Field(..., description="Precipitation in mm")
+    wind_speed: float = Field(..., description="Wind speed in m/s")
+    forecast: Optional[List[Dict[str, Any]]] = Field(None, description="Weather forecast data")
+    timestamp: datetime = Field(default_factory=datetime.now)
+    location: str = Field(..., description="Location for the weather data")
+
 # User Models
 class UserCreate(BaseModel):
     """User registration model."""
@@ -241,6 +252,23 @@ class SoilTypePredictionResponse(BaseModel):
     soil_probabilities: Optional[Dict[str, float]] = {}
     recommendations: Dict[str, Any]
     model_info: Dict[str, Any]
+    created_at: datetime
+    
+    model_config = {"protected_namespaces": ()}  # FIX PYDANTIC WARNING
+
+# Crop Yield Models
+class CropYieldPrediction(BaseModel):
+    """Crop yield prediction model."""
+    id: UUID
+    user_id: UUID
+    crop_type: CropType
+    predicted_yield: float
+    confidence: float
+    area: float
+    input_parameters: Dict[str, Any]
+    recommendations: Dict[str, Any]
+    historical_yields: Optional[List[float]] = None
+    seasonal_factors: Optional[Dict[str, Any]] = None
     created_at: datetime
     
     model_config = {"protected_namespaces": ()}  # FIX PYDANTIC WARNING
