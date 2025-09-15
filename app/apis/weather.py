@@ -8,15 +8,17 @@ from datetime import datetime, timedelta
 import logging
 import httpx
 import os
+from typing import List, Dict, Optional
 
 from app.models.schemas import WeatherResponse
 from app.utils.security import get_current_user
 from app.utils.logging import log_request, log_error
-from app.database import db_ops
+from app.database import supabase
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter()
+
+OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 
 OPENWEATHER_API_KEY = os.getenv("OPENWEATHER_API_KEY", "")
 

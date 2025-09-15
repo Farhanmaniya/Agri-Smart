@@ -1,0 +1,52 @@
+# AgriSmart Backend Dependencies
+
+# Core FastAPI dependencies
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-dotenv
+email-validator
+
+# Database and Storage
+supabase
+sqlalchemy
+alembic
+asyncpg
+psycopg2-binary
+
+# Machine Learning Stack
+scikit-learn
+numpy
+pandas
+joblib
+scipy
+tensorflow  # For .h5 model support
+Cython
+
+# HTTP and API Client
+httpx
+requests
+
+# Logging and Monitoring
+structlog
+python-logging-json
+
+# Testing and Development
+pytest
+pytest-asyncio
+pytest-cov
+black
+flake8
+
+# Security
+cryptography
+PyJWT
+
+# Date and Time handling
+pytz
+python-dateutil

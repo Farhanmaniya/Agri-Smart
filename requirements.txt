@@ -39,4 +39,8 @@ pytest
 pytest-asyncio
 black
 flake8
+<<<<<<< HEAD
 python-jose
+=======
+python-jose
+>>>>>>> 3aad8d2fc8ec236d922afe5ba2b28da39e22873f
