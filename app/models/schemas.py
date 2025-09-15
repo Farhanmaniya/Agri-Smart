@@ -41,26 +41,18 @@ class UserCreate(BaseModel):
     """User registration model."""
     name: str = Field(..., min_length=2, max_length=100)
     email: EmailStr
-    phone: str = Field(..., min_length=13, max_length=15)
+    phone: str
     region: str = Field(..., max_length=100)
     farm_size: float = Field(..., ge=0)
     main_crops: str = Field(..., max_length=200)
-    password: str = Field(..., min_length=12)
-    
-    @field_validator('phone')
-    @classmethod
-    def validate_phone(cls, v):
-        pattern = r"^\+\d{2}-\d{10}$"
-        if not re.match(pattern, v):
-            raise ValueError('Phone must be in format +XX-XXXXXXXXXX')
-        return v
+    password: str = Field(..., min_length=6)
     
     @field_validator('password')
     @classmethod
     def validate_password(cls, v):
-        pattern = r"^[A-Za-z\d@$!%*#?&]{12,}$"
+        pattern = r"^[A-Za-z\d@$!%*#?&]{6,}$"
         if not re.match(pattern, v):
-            raise ValueError('Password must be at least 12 characters with letters, numbers, and special characters')
+            raise ValueError('Password must be at least 6 characters with letters, numbers, and special characters')
         return v
 
 class UserLogin(BaseModel):

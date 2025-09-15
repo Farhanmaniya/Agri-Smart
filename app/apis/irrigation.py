@@ -19,6 +19,32 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+@router.get(
+    "/schedule",
+    response_model=IrrigationResponse,
+    summary="Get current irrigation schedule",
+    description="Get the current irrigation schedule for the user"
+)
+async def get_irrigation_schedule(current_user: dict = Depends(get_current_user)):
+    """Get current irrigation schedule for user."""
+    log_request(logger, "GET", "/api/irrigation/schedule", str(current_user["id"]))
+    
+    try:
+        # Get user's latest schedule from database
+        schedule = await db_ops.get_latest_irrigation_schedule(str(current_user["id"]))
+        if not schedule:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No irrigation schedule found"
+            )
+        return schedule
+    except Exception as e:
+        log_error(logger, e, "Get irrigation schedule")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve irrigation schedule"
+        )
+
 @router.post(
     "/schedule",
     response_model=IrrigationResponse,

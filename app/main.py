@@ -13,7 +13,7 @@ import uvicorn
 import os
 from dotenv import load_dotenv
 
-from app.apis import auth, predictions, irrigation, dashboard
+from app.apis import auth, predictions, irrigation, dashboard, weather, crop_yield
 from app.utils.logging import setup_logger
 from app.database import init_database
 
@@ -38,7 +38,8 @@ origins = [
     "https://agrismart-phi.vercel.app",
     "http://localhost:3000",
     "http://127.0.0.1:3000",
-    "https://localhost:3000"
+    "https://localhost:3000",
+    "http://localhost:4028"
 ]
 
 app.add_middleware(
@@ -57,6 +58,8 @@ app.include_router(auth.router, prefix="/api/auth", tags=["Authentication"])
 app.include_router(predictions.router, prefix="/api/predictions", tags=["Predictions"])
 app.include_router(irrigation.router, prefix="/api/irrigation", tags=["Irrigation"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])
+app.include_router(weather.router, prefix="/api/weather", tags=["Weather"])
+app.include_router(crop_yield.router, prefix="/api/crop-yield", tags=["Crop Yield"])
 
 
 @app.on_event("startup")
