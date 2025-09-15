@@ -256,6 +256,23 @@ class SoilTypePredictionResponse(BaseModel):
     
     model_config = {"protected_namespaces": ()}  # FIX PYDANTIC WARNING
 
+# Crop Yield Models
+class CropYieldPrediction(BaseModel):
+    """Crop yield prediction model."""
+    id: UUID
+    user_id: UUID
+    crop_type: CropType
+    predicted_yield: float
+    confidence: float
+    area: float
+    input_parameters: Dict[str, Any]
+    recommendations: Dict[str, Any]
+    historical_yields: Optional[List[float]] = None
+    seasonal_factors: Optional[Dict[str, Any]] = None
+    created_at: datetime
+    
+    model_config = {"protected_namespaces": ()}  # FIX PYDANTIC WARNING
+
 # Model Management
 class ModelInfo(BaseModel):
     """Information about a loaded ML model."""
