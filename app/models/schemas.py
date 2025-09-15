@@ -36,17 +36,6 @@ class CropType(str, Enum):
     LENTIL = "lentil"
     GROUNDNUT = "groundnut"
 
-# Weather Models
-class WeatherResponse(BaseModel):
-    """Weather data response model."""
-    temperature: float = Field(..., description="Temperature in Celsius")
-    humidity: float = Field(..., description="Humidity percentage")
-    precipitation: float = Field(..., description="Precipitation in mm")
-    wind_speed: float = Field(..., description="Wind speed in m/s")
-    forecast: Optional[List[Dict[str, Any]]] = Field(None, description="Weather forecast data")
-    timestamp: datetime = Field(default_factory=datetime.now)
-    location: str = Field(..., description="Location for the weather data")
-
 # User Models
 class UserCreate(BaseModel):
     """User registration model."""
@@ -170,6 +159,13 @@ class PestPredictionRequest(PredictionRequest):
     pest_description: str
     damage_level: str = Field(..., pattern=r"^(low|medium|high)$")  # FIXED: Changed regex to pattern
     treatment_history: Optional[List[str]] = []
+    # Image analysis fields (optional to maintain backward compatibility)
+    image_data: Optional[str] = Field(None, description="Base64 encoded image data")
+    image_type: Optional[str] = Field(None, pattern=r"^(jpeg|jpg|png)$", description="Image file type")
+    image_metadata: Optional[Dict[str, Any]] = Field(
+        default_factory=dict,
+        description="Additional image metadata like resolution, capture time, etc."
+    )
 
 class RainfallPredictionRequest(BaseModel):
     """Rainfall prediction request model."""
@@ -182,6 +178,23 @@ class RainfallPredictionRequest(BaseModel):
     # Optional metadata
     location: Optional[str] = None
     elevation: Optional[float] = None
+    
+    # Historical data (optional, enhances prediction accuracy)
+    historical_rainfall: Optional[List[float]] = Field(
+        None,
+        description="Previous months' rainfall data in mm (up to 12 months)"
+    )
+    seasonal_pattern: Optional[str] = Field(
+        None,
+        pattern=r"^(monsoon|winter|summer|spring)$",
+        description="Current seasonal pattern"
+    )
+    soil_moisture_percentage: Optional[float] = Field(
+        None,
+        ge=0,
+        le=100,
+        description="Current soil moisture percentage"
+    )
 
 class SoilTypePredictionRequest(BaseModel):
     """Soil type prediction request model."""
@@ -197,6 +210,25 @@ class SoilTypePredictionRequest(BaseModel):
     location: Optional[str] = None
     depth: Optional[float] = Field(None, ge=0, description="Soil depth in cm")
     texture: Optional[str] = None
+    
+    # Enhanced soil properties (optional)
+    ph_level: Optional[float] = Field(
+        None,
+        ge=0,
+        le=14,
+        description="Soil pH level (0-14 scale)"
+    )
+    organic_matter: Optional[float] = Field(
+        None,
+        ge=0,
+        le=100,
+        description="Organic matter content percentage"
+    )
+    electrical_conductivity: Optional[float] = Field(
+        None,
+        ge=0,
+        description="Electrical conductivity in dS/m"
+    )
 
 class PredictionResponse(BaseModel):
     """Enhanced prediction response model."""
@@ -252,23 +284,6 @@ class SoilTypePredictionResponse(BaseModel):
     soil_probabilities: Optional[Dict[str, float]] = {}
     recommendations: Dict[str, Any]
     model_info: Dict[str, Any]
-    created_at: datetime
-    
-    model_config = {"protected_namespaces": ()}  # FIX PYDANTIC WARNING
-
-# Crop Yield Models
-class CropYieldPrediction(BaseModel):
-    """Crop yield prediction model."""
-    id: UUID
-    user_id: UUID
-    crop_type: CropType
-    predicted_yield: float
-    confidence: float
-    area: float
-    input_parameters: Dict[str, Any]
-    recommendations: Dict[str, Any]
-    historical_yields: Optional[List[float]] = None
-    seasonal_factors: Optional[Dict[str, Any]] = None
     created_at: datetime
     
     model_config = {"protected_namespaces": ()}  # FIX PYDANTIC WARNING
@@ -377,6 +392,42 @@ class CropAnalytics(BaseModel):
     soil_suitability: Optional[str] = None
 
 # Soil and Weather Data Models
+class SoilQualityMetrics(BaseModel):
+    """Soil quality metrics model."""
+    quality_score: float = Field(..., ge=0, le=100)
+    fertility_index: float = Field(..., ge=0, le=100)
+    organic_content: float = Field(..., ge=0, le=100)
+    biological_activity: float = Field(..., ge=0, le=100)
+    compaction: float = Field(..., ge=0, le=100)
+    updated_at: datetime
+
+    model_config = {"protected_namespaces": ()}
+
+class SoilHealthHistory(BaseModel):
+    """Historical soil health data model."""
+    dates: List[datetime]
+    metrics: Dict[str, List[float]]
+    trends: Dict[str, str]
+    alerts: List[Dict[str, Any]] = []
+    
+    model_config = {"protected_namespaces": ()}
+
+class SoilNutrientLevels(BaseModel):
+    """Detailed soil nutrient levels."""
+    nitrogen: float = Field(..., ge=0)
+    phosphorus: float = Field(..., ge=0)
+    potassium: float = Field(..., ge=0)
+    calcium: float = Field(..., ge=0)
+    magnesium: float = Field(..., ge=0)
+    sulfur: float = Field(..., ge=0)
+    zinc: float = Field(..., ge=0)
+    manganese: float = Field(..., ge=0)
+    iron: float = Field(..., ge=0)
+    copper: float = Field(..., ge=0)
+    boron: float = Field(..., ge=0)
+    
+    model_config = {"protected_namespaces": ()}
+
 class EnhancedSoilData(BaseModel):
     """Enhanced soil data model matching your crop recommendation model."""
     # Primary nutrients
@@ -402,19 +453,168 @@ class EnhancedSoilData(BaseModel):
     texture: Optional[str] = None
     drainage: Optional[str] = None
     depth: Optional[float] = None
+    
+    # Quality metrics
+    quality_metrics: Optional[SoilQualityMetrics] = None
+    nutrient_levels: Optional[SoilNutrientLevels] = None
+    last_updated: datetime = Field(default_factory=datetime.now)
+    
+    model_config = {"protected_namespaces": ()}
+
+class WeatherCondition(str, Enum):
+    """Weather condition types."""
+    CLEAR = "clear"
+    PARTLY_CLOUDY = "partly_cloudy"
+    CLOUDY = "cloudy"
+    RAIN = "rain"
+    THUNDERSTORM = "thunderstorm"
+    SNOW = "snow"
+    MIST = "mist"
 
 class WeatherData(BaseModel):
     """Weather data model."""
-    temperature: float
-    humidity: float
-    rainfall: float
-    wind_speed: float
-    pressure: float
+    temperature: float = Field(..., description="Temperature in Celsius")
+    feels_like: float = Field(..., description="Feels like temperature in Celsius")
+    humidity: float = Field(..., ge=0, le=100, description="Relative humidity percentage")
+    rainfall: float = Field(..., ge=0, description="Rainfall in mm")
+    wind_speed: float = Field(..., ge=0, description="Wind speed in m/s")
+    wind_direction: float = Field(..., ge=0, le=360, description="Wind direction in degrees")
+    pressure: float = Field(..., ge=0, description="Atmospheric pressure in hPa")
+    visibility: float = Field(..., ge=0, description="Visibility in meters")
+    condition: WeatherCondition
     date: datetime
     
     # Additional weather parameters
-    uv_index: Optional[float] = None
-    evapotranspiration: Optional[float] = None
+    uv_index: Optional[float] = Field(None, ge=0, le=11)
+    evapotranspiration: Optional[float] = Field(None, ge=0)
+    dew_point: Optional[float] = None
+    cloud_cover: Optional[int] = Field(None, ge=0, le=100)
+    
+    model_config = {"protected_namespaces": ()}
+
+class WeatherAlert(BaseModel):
+    """Weather alert model."""
+    alert_type: str
+    severity: str
+    title: str
+    description: str
+    start_time: datetime
+    end_time: datetime
+    affected_areas: List[str]
+    recommendations: Optional[List[str]] = None
+    source: str = "OpenWeather"
+    certainty: str = Field(..., pattern="^(Observed|Likely|Possible|Unlikely)$")
+    
+    model_config = {"protected_namespaces": ()}
+
+class WeatherForecast(BaseModel):
+    """Detailed weather forecast model."""
+    hourly: List[WeatherData]
+    daily: List[WeatherData]
+    precipitation_probability: List[float]
+    weather_warnings: Optional[List[WeatherAlert]] = None
+    
+    model_config = {"protected_namespaces": ()}
+
+class WeatherResponse(BaseModel):
+    """Weather API response model."""
+    location: str
+    coordinates: Dict[str, float]
+    timezone: str
+    current: WeatherData
+    forecast: WeatherForecast
+    alerts: Optional[List[WeatherAlert]] = None
+    last_updated: datetime
+    
+    model_config = {"protected_namespaces": ()}
+
+# Market Data Models
+class MarketData(BaseModel):
+    """Market data model for current prices and trends."""
+    crop_type: str
+    current_price: float
+    currency: str = "USD"
+    unit: str = "ton"
+    price_change: float
+    price_change_percentage: float
+    volume: int
+    market_cap: float
+    updated_at: datetime
+    
+    model_config = {"protected_namespaces": ()}
+
+class PriceHistory(BaseModel):
+    """Historical price data model."""
+    crop_type: str
+    prices: List[float]
+    volumes: List[int]
+    dates: List[str]
+    currency: str = "USD"
+    unit: str = "ton"
+    
+    model_config = {"protected_namespaces": ()}
+
+class MarketTrends(BaseModel):
+    """Market trends and analysis model."""
+    crop_type: str
+    price_trend: str
+    demand_trend: str
+    supply_status: str
+    market_sentiment: str
+    price_volatility: str
+    trading_volume_trend: str
+    seasonal_factors: List[str]
+    key_influences: List[str]
+    
+    model_config = {"protected_namespaces": ()}
+
+class DemandForecast(BaseModel):
+    """Demand forecast model."""
+    crop_type: str
+    current_demand: float
+    forecasted_demand: List[Dict[str, Any]]
+    factors_affecting_demand: List[str]
+    confidence_level: float
+    unit: str = "ton"
+    updated_at: datetime
+    
+    model_config = {"protected_namespaces": ()}
+
+# Weather Forecast Models
+class HourlyForecast(BaseModel):
+    """Hourly weather forecast model."""
+    hour: int = Field(..., ge=0, le=23)
+    temperature: float
+    precipitation_chance: float = Field(..., ge=0, le=100)
+    weather_condition: WeatherCondition
+    wind_speed: float
+    
+    model_config = {"protected_namespaces": ()}
+
+class DailyForecast(BaseModel):
+    """Daily weather forecast model."""
+    date: datetime
+    temp_max: float
+    temp_min: float
+    sunrise: datetime
+    sunset: datetime
+    weather_condition: WeatherCondition
+    precipitation_chance: float = Field(..., ge=0, le=100)
+    rainfall: float = Field(..., ge=0)
+    uv_index: float = Field(..., ge=0)
+    
+    model_config = {"protected_namespaces": ()}
+
+class WeatherForecastResponse(BaseModel):
+    """Detailed weather forecast response."""
+    location: str
+    current_time: datetime
+    timezone: str
+    hourly_forecast: List[HourlyForecast]
+    daily_forecast: List[DailyForecast]
+    alerts: Optional[List[WeatherAlert]] = None
+    
+    model_config = {"protected_namespaces": ()}
 
 # Error Response Models
 class ErrorResponse(BaseModel):
