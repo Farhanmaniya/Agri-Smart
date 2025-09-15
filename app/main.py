@@ -16,7 +16,7 @@ import os
 from dotenv import load_dotenv
 import time
 
-from app.apis import (
+from apis import (
     auth,
     predictions,
     irrigation,
@@ -26,8 +26,8 @@ from app.apis import (
     soil_health,
     market_data
 )
-from app.utils.logging import setup_logger
-from app.database import init_database, check_database_connection
+from utils.logging import setup_logger
+from database import init_database, check_database_connection
 
 # Load environment variables
 load_dotenv()

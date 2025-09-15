@@ -37,6 +37,84 @@ class CropType(str, Enum):
     GROUNDNUT = "groundnut"
 
 # User Models
+class PredictionRequest(BaseModel):
+    """Base prediction request model."""
+    area: float = Field(..., ge=0, description="Area in hectares")
+    prediction_type: Optional[PredictionType] = None
+    crop_type: Optional[CropType] = None
+
+class YieldPredictionRequest(PredictionRequest):
+    """Yield prediction specific request."""
+    prediction_type: PredictionType = PredictionType.YIELD
+    crop_type: CropType
+    area: float = Field(..., ge=0)
+    rainfall: float = Field(..., ge=0)
+    fertilizer_amount: float = Field(..., ge=0)
+    temperature: float = Field(..., ge=-50, le=60)
+    nitrogen: float = Field(..., ge=0)
+    phosphorus: float = Field(..., ge=0)
+    potassium: float = Field(..., ge=0)
+    sowing_date: str
+    soil_ph: float = Field(..., ge=0, le=14)
+    
+    @field_validator('sowing_date')
+    @classmethod
+    def validate_date(cls, v):
+        try:
+            datetime.strptime(v, '%Y-%m-%d')
+            return v
+        except ValueError:
+            raise ValueError('Date must be in YYYY-MM-DD format')
+
+class CropYieldPrediction(BaseModel):
+    """Crop yield prediction response model."""
+    id: UUID
+    user_id: UUID
+    crop_type: CropType
+    predicted_yield: float = Field(..., ge=0, description="Predicted yield in tons/hectare")
+    confidence_score: float = Field(..., ge=0, le=1, description="Model confidence score")
+    prediction_date: datetime = Field(default_factory=datetime.now)
+    harvest_window: Dict[str, datetime] = Field(
+        ...,
+        description="Predicted harvest window with start and end dates"
+    )
+    factors: Dict[str, float] = Field(
+        ...,
+        description="Contributing factors and their importance scores"
+    )
+    recommendations: List[str] = Field(
+        default_factory=list,
+        description="Recommendations for yield optimization"
+    )
+    historical_comparison: Optional[Dict[str, float]] = Field(
+        None,
+        description="Comparison with historical yields"
+    )
+
+class CropAnalytics(BaseModel):
+    """Crop analytics response model."""
+    crop_type: CropType
+    total_area: float = Field(..., ge=0, description="Total area under cultivation in hectares")
+    current_growth_stage: str
+    health_index: float = Field(..., ge=0, le=100, description="Overall crop health index")
+    stress_factors: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of identified stress factors"
+    )
+    growth_timeline: Dict[str, datetime] = Field(
+        ...,
+        description="Key growth stage dates"
+    )
+    yield_forecast: Optional[float] = Field(
+        None,
+        ge=0,
+        description="Forecasted yield in tons/hectare"
+    )
+    recommendations: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Action recommendations"
+    )
+
 class UserCreate(BaseModel):
     """User registration model."""
     name: str = Field(..., min_length=2, max_length=100)
@@ -590,6 +668,55 @@ class HourlyForecast(BaseModel):
     wind_speed: float
     
     model_config = {"protected_namespaces": ()}
+
+class CropYieldPrediction(BaseModel):
+    """Crop yield prediction response model."""
+    id: UUID
+    user_id: UUID
+    crop_type: CropType
+    predicted_yield: float = Field(..., ge=0, description="Predicted yield in tons/hectare")
+    confidence_score: float = Field(..., ge=0, le=1, description="Model confidence score")
+    prediction_date: datetime = Field(default_factory=datetime.now)
+    harvest_window: Dict[str, datetime] = Field(
+        ...,
+        description="Predicted harvest window with start and end dates"
+    )
+    factors: Dict[str, float] = Field(
+        ...,
+        description="Contributing factors and their importance scores"
+    )
+    recommendations: List[str] = Field(
+        default_factory=list,
+        description="Recommendations for yield optimization"
+    )
+    historical_comparison: Optional[Dict[str, float]] = Field(
+        None,
+        description="Comparison with historical yields"
+    )
+
+class CropAnalytics(BaseModel):
+    """Crop analytics response model."""
+    crop_type: CropType
+    total_area: float = Field(..., ge=0, description="Total area under cultivation in hectares")
+    current_growth_stage: str
+    health_index: float = Field(..., ge=0, le=100, description="Overall crop health index")
+    stress_factors: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="List of identified stress factors"
+    )
+    growth_timeline: Dict[str, datetime] = Field(
+        ...,
+        description="Key growth stage dates"
+    )
+    yield_forecast: Optional[float] = Field(
+        None,
+        ge=0,
+        description="Forecasted yield in tons/hectare"
+    )
+    recommendations: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Action recommendations"
+    )
 
 class DailyForecast(BaseModel):
     """Daily weather forecast model."""
