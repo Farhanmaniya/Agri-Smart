@@ -36,6 +36,17 @@ class CropType(str, Enum):
     LENTIL = "lentil"
     GROUNDNUT = "groundnut"
 
+# Weather Models
+class WeatherResponse(BaseModel):
+    """Weather data response model."""
+    temperature: float = Field(..., description="Temperature in Celsius")
+    humidity: float = Field(..., description="Humidity percentage")
+    precipitation: float = Field(..., description="Precipitation in mm")
+    wind_speed: float = Field(..., description="Wind speed in m/s")
+    forecast: Optional[List[Dict[str, Any]]] = Field(None, description="Weather forecast data")
+    timestamp: datetime = Field(default_factory=datetime.now)
+    location: str = Field(..., description="Location for the weather data")
+
 # User Models
 class UserCreate(BaseModel):
     """User registration model."""
