@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import Optional
-from models.schemas import UserCreate, UserLogin, UserResponse, TokenResponse, GoogleAuthRequest, ErrorResponse
-from services.auth import auth_service
-from utils.security import create_access_token, get_current_user
-from database import supabase
+from app.models.schemas import UserCreate, UserLogin, UserResponse, TokenResponse, GoogleAuthRequest, ErrorResponse
+from app.services.auth import auth_service
+from app.utils.security import create_access_token, get_current_user
+from app.database import supabase
 import logging
 
 router = APIRouter()  # Define the router
