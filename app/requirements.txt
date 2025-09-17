@@ -8,7 +8,38 @@ bcrypt==4.0.1
 python-dotenv==1.0.0
 
 # Database
-supabase==2.0.0
+supabase==2.0.0# Core dependencies
+fastapi
+uvicorn[standard]
+python-multipart
+python-jose[cryptography]
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-dotenv
+
+# Database
+supabase
+databases[postgresql]
+
+# Machine Learning
+scikit-learn
+numpy
+pandas
+joblib
+
+# ML Model Support
+tensorflow>=2.13.0
+
+# HTTP client
+httpx
+
+# Validation
+pydantic
+email-validator
+
+# Security
+cryptography
+PyJWT
 postgrest==0.13.0
 
 # Machine Learning
