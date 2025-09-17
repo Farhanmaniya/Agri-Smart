@@ -1,117 +1,92 @@
-from passlib.context import CryptContext
+"""
+Authentication service for AgriSmart
+"""
+from datetime import datetime, timedelta
+from typing import Optional, Dict, Any
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
-from datetime import datetime, timedelta, timezone
-from app.database import supabase
-from app.utils.security import SECRET_KEY, ALGORITHM
-from fastapi import HTTPException, status
+from passlib.context import CryptContext
 import os
-from uuid import uuid4
-from typing import Optional
-import logging
 
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from ..models.schemas import UserCreate, UserResponse
+from ..database import DatabaseManager
 
+# Password hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class AuthService:
-    """Authentication service for user management."""
+# JWT configuration
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/auth/login")
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
+
+# Database instance
+db = DatabaseManager()
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    """Verify password hash"""
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    """Generate password hash"""
+    return pwd_context.hash(password)
+
+def create_access_token(data: Dict[str, Any]) -> str:
+    """Create JWT access token"""
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+async def create_user(user_data: UserCreate) -> UserResponse:
+    """Create a new user"""
+    # Check if user exists
+    existing_user = await db.get_user_by_email(user_data.email)
+    if existing_user:
+        raise ValueError("Email already registered")
     
-    def hash_password(self, password: str) -> str:
-        return pwd_context.hash(password)
+    # Create user with hashed password
+    hashed_password = get_password_hash(user_data.password)
+    db_user = await db.create_user({
+        "email": user_data.email,
+        "full_name": user_data.full_name,
+        "password_hash": hashed_password
+    })
+    
+    if not db_user:
+        raise ValueError("Failed to create user")
+    
+    return UserResponse(**db_user)
 
-    def verify_password(self, plain_password: str, hashed_password: str) -> bool:
-        return pwd_context.verify(plain_password, hashed_password)
+async def authenticate_user(email: str, password: str) -> Optional[UserResponse]:
+    """Authenticate user with email and password"""
+    user = await db.get_user_by_email(email)
+    if not user:
+        return None
+    if not verify_password(password, user["password_hash"]):
+        return None
+    return UserResponse(**user)
 
-    def create_access_token(self, data: dict, expires_delta: timedelta = None) -> str:
-        to_encode = data.copy()
-        if expires_delta:
-            expire = datetime.now(timezone.utc) + expires_delta
-        else:
-            expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-        to_encode.update({"exp": expire})
-        return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-    # Google OAuth methods (commented out for testing without credentials)
-    # def verify_google_token(self, token: str) -> dict:
-    #     CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-    #     try:
-    #         from google.oauth2 import id_token
-    #         from google.auth.transport import requests
-    #         idinfo = id_token.verify_oauth2_token(token, requests.Request(), CLIENT_ID)
-    #         if idinfo['iss'] not in ['accounts.google.com', 'https://accounts.google.com']:
-    #             raise ValueError("Wrong issuer.")
-    #         return idinfo
-    #     except ValueError:
-    #         raise HTTPException(status_code=400, detail="Invalid Google token")
-
-    def register_user(self, user_data: dict) -> dict:
-        # Ensure all required fields are present with defaults if missing
-        user_data = {
-            'name': user_data.get('name', ''),
-            'email': user_data.get('email', ''),
-            'phone': user_data.get('phone', ''),
-            'region': user_data.get('region', ''),
-            'farm_size': user_data.get('farm_size', 0.0),
-            'main_crops': user_data.get('main_crops', ''),
-            'password': self.hash_password(user_data.pop('password', ''))  # Required, hash it
-        }
-        if not all([user_data['name'], user_data['email'], user_data['phone'], user_data['region'], 
-                    user_data['main_crops'], user_data['password']]):
-            raise HTTPException(status_code=400, detail="Missing required fields")
-        if user_data['farm_size'] < 0:
-            raise HTTPException(status_code=400, detail="Farm size must be non-negative")
-
-        user_data.update({
-            'id': str(uuid4()),
-            'member_since': int(datetime.now(timezone.utc).timestamp()),
-            'created_at': datetime.now(timezone.utc).isoformat(),
-            'predictions_count': 0,
-            'accuracy_rate': '0%',
-            'last_prediction': 'Never'
-        })
-
-        logger.info(f"Inserting user data: {user_data}")
-        response = supabase.table('users').insert(user_data).execute()
-        if response.data:
-            logger.info(f"User registered: {response.data[0]}")
-            return response.data[0]
-        error_detail = response.error.message if response.error else "Unknown error"
-        logger.error(f"Supabase insert failed: {error_detail}")
-        raise HTTPException(status_code=500, detail=f"Failed to save user to Supabase: {error_detail}")
-
-    def login_user(self, email: str, password: str) -> dict:
-        response = supabase.table('users').select('*').eq('email', email).execute()
-        if not response.data or not self.verify_password(password, response.data[0]['password']):
-            raise HTTPException(status_code=401, detail="Invalid credentials")
-        return response.data[0]
-
-    def get_user_by_email(self, email: str) -> Optional[dict]:
-        response = supabase.table('users').select('*').eq('email', email).execute()
-        return response.data[0] if response.data else None
-
-    # Google OAuth method (commented out for testing)
-    # def create_or_login_google_user(self, idinfo: dict) -> dict:
-    #     user = self.get_user_by_email(idinfo['email'])
-    #     if not user:
-    #         user_data = {
-    #             'id': str(uuid4()),
-    #             'name': idinfo['name'],
-    #             'email': idinfo['email'],
-    #             'phone': '',  # Placeholder
-    #             'region': '',
-    #             'farm_size': 0.0,
-    #             'main_crops': '',
-    #             'password': '',  # No password for OAuth
-    #             'member_since': int(datetime.now(timezone.utc).timestamp()),
-    #             'created_at': datetime.now(timezone.utc).isoformat(),
-    #             'predictions_count': 0,
-    #             'accuracy_rate': '0%',
-    #             'last_prediction': 'Never'
-    #         }
-    #         response = supabase.table('users').insert(user_data).execute()
-    #         user = response.data[0]
-    #     return user
-
-# Export the service instance
-auth_service = AuthService()
+async def get_current_user(token: str = Depends(oauth2_scheme)) -> UserResponse:
+    """Get current user from JWT token"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id: str = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+        
+    user = await db.get_user_by_id(user_id)
+    if user is None:
+        raise credentials_exception
+        
+    return UserResponse(**user)
